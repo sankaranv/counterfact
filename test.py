@@ -1,7 +1,3 @@
-from actual_cause.examples import *
-from actual_cause.definitions import *
-
-
 def rock_throwing_hp_test():
     env = RockThrowing()
     ac_defn = ModifiedHP()
@@ -12,8 +8,8 @@ def rock_throwing_hp_test():
         "billy_hits": 0,
         "bottle_shatters": 1,
     }
-    event = {"suzy_throws": 1, "suzy_hits": 1, "billy_hits": 0}
-    outcome = {"bottle_shatters": 1}
+    event = {"suzy_throws": 1}
+    outcome = {"bottle_shatters": 0}
     print(f"Event: {event}")
     print(f"Outcome: {outcome}")
     result, info = ac_defn.is_actual_cause(

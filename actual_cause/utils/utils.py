@@ -13,3 +13,16 @@ def get_all_subevents(event, reverse=False):
     event_combinations = list(powerset(vars, reverse))
     subevents = [{k: event[k] for k in subevent} for subevent in event_combinations]
     return subevents
+
+
+def add_info(info, updates):
+    """
+    Add elements of second dictionary to first dictionary
+    If any keys from the updates dict are already in info, the values are overwritten
+    :param info: dict
+    :param updates: dict
+    :return: combined dict
+    """
+    for k, v in updates.items():
+        info[k] = v
+    return info
