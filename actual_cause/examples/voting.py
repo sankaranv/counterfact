@@ -3,13 +3,6 @@ from actual_cause.causal_models.variables import Variable, ExogenousNoise
 import numpy as np
 
 
-description = """
-            Billy and Suzy are running for election and there are n voters. The outcome is a binary variable winner where 1 
-            indicates that Suzy wins and 0 indicates that Billy wins. There are n binary variables indicating each 
-            person's vote, one variable per voter. A candidate needs to have the majority in order to win.
-            """
-
-
 class Voting(StructuralCausalModel):
 
     def __init__(self, n_voters=11):

@@ -5,6 +5,8 @@ import numpy as np
 
 class RockThrowing(StructuralCausalModel):
 
+    # TODO - update so that the parents correspond to the causal graph
+
     def __init__(self):
         super().__init__()
 

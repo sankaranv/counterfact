@@ -1,21 +1,26 @@
 from actual_cause.examples import *
+from actual_cause.definitions import *
+
+
+def rock_throwing_hp_test():
+    env = RockThrowing()
+    ac_defn = ModifiedHP()
+    state = {
+        "suzy_throws": 1,
+        "billy_throws": 1,
+        "suzy_hits": 1,
+        "billy_hits": 0,
+        "bottle_shatters": 1,
+    }
+    event = {"suzy_throws": 1, "suzy_hits": 1, "billy_hits": 0}
+    outcome = {"bottle_shatters": 1}
+    print(f"Event: {event}")
+    print(f"Outcome: {outcome}")
+    result, info = ac_defn.is_actual_cause(
+        env, event, outcome, state, noise={"suzy_throws": 1, "billy_throws": 1}
+    )
+    print(result, info)
 
 
 if __name__ == "__main__":
-
-    envs = [
-        BinaryAnd(),
-        BinaryOr(),
-        BinaryXor(),
-        ForestFireConjunctive(),
-        ForestFireDisjunctive(),
-        ForestFireRainStorm(),
-        ObedientGang(3),
-        HaltOrCharge(),
-        SwitchingRailroadTracks(),
-        RockThrowing(),
-        Voting(5),
-    ]
-    for env in envs:
-        samples = env.sample(10)
-        print(samples[0])
+    rock_throwing_hp_test()

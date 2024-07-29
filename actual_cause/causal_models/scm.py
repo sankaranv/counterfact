@@ -61,7 +61,7 @@ class StructuralCausalModel:
         else:
             self.causal_graph = graph
         self.original_graph = copy.deepcopy(self.causal_graph)
-        self.original_state: Dict[str, StructuralFunction] = {}
+        self.original_functions: Dict[str, StructuralFunction] = {}
 
     def add_variable(self, variable: Variable):
         """
@@ -73,6 +73,7 @@ class StructuralCausalModel:
             raise ValueError(f"Variable {variable.name} already exists")
         self.variables[variable.name] = variable
         self.causal_graph.add_node(variable.name)
+        self.original_graph.add_node(variable.name)
 
     def add_variables(self, variables: List[Variable]):
         """
@@ -95,7 +96,11 @@ class StructuralCausalModel:
         if variable_name not in self.variables:
             raise ValueError(f"Variable {variable_name} not found.")
         self.structural_functions[variable_name] = structural_function
-        self.original_state[variable_name] = copy.deepcopy(structural_function)
+        self.original_functions[variable_name] = copy.deepcopy(structural_function)
+
+        # Create edges in the causal graph from parents of the function to the variable
+        for parent in structural_function.parents:
+            self.add_edge(parent, variable_name)
 
     def set_structural_functions(
         self, structural_functions: Dict[str, StructuralFunction]
@@ -108,8 +113,9 @@ class StructuralCausalModel:
         for variable_name, structural_function in structural_functions.items():
             self.set_structural_function(variable_name, structural_function)
 
-    def add_dependency(self, from_node: str, to_node: str):
+    def add_edge(self, from_node: str, to_node: str):
         self.causal_graph.add_edge(from_node, to_node)
+        self.original_graph.add_edge(from_node, to_node)
 
     def reset(self):
         """
@@ -117,7 +123,7 @@ class StructuralCausalModel:
         :return: None
         """
         self.interventions.clear()
-        self.structural_functions = copy.deepcopy(self.original_state)
+        self.structural_functions = copy.deepcopy(self.original_functions)
         self.causal_graph = copy.deepcopy(self.original_graph)
 
     def do(self, variable_name: str, value: Any):
@@ -171,6 +177,10 @@ class StructuralCausalModel:
         self.structural_functions[variable_name] = StructuralFunction(
             function=lambda: value, noise_dist=None, parents=[]
         )
+
+    def intervene(self, intervention):
+        for var, value in intervention.items():
+            self.do(var, value)
 
     def evaluate(self, variable_name: str, inputs: dict, noise: dict = None) -> float:
         """
@@ -239,6 +249,14 @@ class StructuralCausalModel:
                     sample[variable_name] = self.evaluate(variable_name, sample)
             samples.append(sample)
         return samples
+
+    def get_state(self, noise: dict = None):
+        nodes = list(nx.topological_sort(self.causal_graph))
+        state = {}
+        for var_name in nodes:
+            if var_name not in state:
+                state[var_name] = self.evaluate(var_name, state, noise)
+        return state
 
     def __call__(self, variable_name: str, **kwargs: Any) -> float:
         return self.evaluate(variable_name, **kwargs)
