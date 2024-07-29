@@ -173,9 +173,12 @@ class StructuralCausalModel:
             list(self.causal_graph.in_edges(variable_name))
         )
 
+        def constant_function(inputs, noise):
+            return value
+
         # Structural function for the intervened variable is a constant function that returns the intervened value
         self.structural_functions[variable_name] = StructuralFunction(
-            function=lambda: value, noise_dist=None, parents=[]
+            function=constant_function, noise_dist=None, parents=[]
         )
 
     def intervene(self, intervention):

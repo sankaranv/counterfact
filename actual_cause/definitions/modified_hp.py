@@ -55,13 +55,15 @@ class ModifiedHP(ACDefinition):
             alt_event = {var: value for var, value in zip(event_vars, alt_assignment)}
             env.intervene(alt_event)
             alt_state = env.get_state(noise)
-
+            alt_outcome = {var: alt_state[var] for var in outcome}
             # Check if the sufficiency condition is violated by the alternative event and outcome
             sufficient, ac2b_info = self.is_sufficient(
-                env, alt_event, outcome, state, noise
+                env, alt_event, outcome, alt_state, noise
             )
             if not sufficient:
                 info["ac2a_alt_event"] = alt_event
+                print(f"Alt event: {alt_event}")
+                print(f"Alt outcome: {alt_outcome}")
                 return True, info
 
         # No other intervention on the event variables was insufficient for the observed outcome
@@ -83,11 +85,9 @@ class ModifiedHP(ACDefinition):
 
         # Reset the effect of prior interventions
         env.reset()
-
         # Intervene on the model to apply the given event
         env.intervene(event)
         new_state = env.get_state(noise)
-
         # Check if the outcome is satisfied
         for var in outcome:
             if new_state[var] != outcome[var]:

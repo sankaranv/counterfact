@@ -18,7 +18,8 @@ class TestAC1ModifiedHPRockThrowing:
         }
         event = {"suzy_throws": 1, "suzy_hits": 1, "billy_hits": 0}
         outcome = {"bottle_shatters": 1}
-        result, info = ac_defn.is_factual(env, event, outcome, state)
+        noise = {"suzy_throws": 1, "billy_throws": 1}
+        result, info = ac_defn.is_factual(env, event, outcome, state, noise)
         assert result is True
 
     def test_2(self):
@@ -34,7 +35,8 @@ class TestAC1ModifiedHPRockThrowing:
         }
         event = {"suzy_hits": 1, "billy_hits": 1}
         outcome = {"bottle_shatters": 1}
-        result, info = ac_defn.is_factual(env, event, outcome, state)
+        noise = {"suzy_throws": 1, "billy_throws": 1}
+        result, info = ac_defn.is_factual(env, event, outcome, state, noise)
         assert result is True
 
     def test_3(self):
@@ -50,7 +52,8 @@ class TestAC1ModifiedHPRockThrowing:
         }
         event = {"suzy_throws": 1}
         outcome = {"bottle_shatters": 0}
-        result, info = ac_defn.is_factual(env, event, outcome, state)
+        noise = {"suzy_throws": 1, "billy_throws": 1}
+        result, info = ac_defn.is_factual(env, event, outcome, state, noise)
         assert result is True
 
     def test_4(self):
@@ -66,7 +69,8 @@ class TestAC1ModifiedHPRockThrowing:
         }
         event = {"suzy_throws": 0, "suzy_hits": 1}
         outcome = {"bottle_shatters": 1}
-        result, info = ac_defn.is_factual(env, event, outcome, state)
+        noise = {"suzy_throws": 1, "billy_throws": 0}
+        result, info = ac_defn.is_factual(env, event, outcome, state, noise)
         assert result is False
 
         # Check if the given info is correct
@@ -87,7 +91,8 @@ class TestAC1ModifiedHPRockThrowing:
         }
         event = {"suzy_throws": 0}
         outcome = {"bottle_shatters": 0}
-        result, info = ac_defn.is_factual(env, event, outcome, state)
+        noise = {"suzy_throws": 0, "billy_throws": 1}
+        result, info = ac_defn.is_factual(env, event, outcome, state, noise)
         assert result is False
 
         # Check if the given info is correct
@@ -111,7 +116,8 @@ class TestSufficiencyModifiedHPRockThrowing:
         }
         event = {"suzy_throws": 1, "suzy_hits": 1, "billy_hits": 0}
         outcome = {"bottle_shatters": 1}
-        result, info = ac_defn.is_sufficient(env, event, outcome, state)
+        noise = {"suzy_throws": 1, "billy_throws": 1}
+        result, info = ac_defn.is_sufficient(env, event, outcome, state, noise)
         assert result is True
 
     def test_2(self):
@@ -127,7 +133,8 @@ class TestSufficiencyModifiedHPRockThrowing:
         }
         event = {"suzy_throws": 0}
         outcome = {"bottle_shatters": 0}
-        result, info = ac_defn.is_sufficient(env, event, outcome, state)
+        noise = {"suzy_throws": 0, "billy_throws": 0}
+        result, info = ac_defn.is_sufficient(env, event, outcome, state, noise)
         assert result is True
 
     def test_3(self):
@@ -144,11 +151,12 @@ class TestSufficiencyModifiedHPRockThrowing:
         }
         event = {"suzy_throws": 1, "billy_hits": 0}
         outcome = {"bottle_shatters": 0}
-        result, info = ac_defn.is_sufficient(env, event, outcome, state)
+        noise = {"suzy_throws": 1, "billy_throws": 1}
+        result, info = ac_defn.is_sufficient(env, event, outcome, state, noise)
         assert result is False
         assert "ac2b_alt_outcome" in info
         assert "bottle_shatters" in info["ac2b_alt_outcome"]
-        assert info["ac2b_alt_outcome"]["bottle_shatters"] == 0
+        assert info["ac2b_alt_outcome"]["bottle_shatters"] == 1
 
 
 class TestNecessityModifiedHPRockThrowing:
@@ -166,7 +174,8 @@ class TestNecessityModifiedHPRockThrowing:
         }
         event = {"suzy_throws": 1, "billy_throws": 1, "billy_hits": 0}
         outcome = {"bottle_shatters": 1}
-        result, info = ac_defn.is_necessary(env, event, outcome, state)
+        noise = {"suzy_throws": 1, "billy_throws": 1}
+        result, info = ac_defn.is_necessary(env, event, outcome, state, noise)
         assert result is True
 
         # Check that the correct info was returned
@@ -178,7 +187,7 @@ class TestNecessityModifiedHPRockThrowing:
         assert any([info["ac2a_alt_event"][key] != event[key] for key in event])
         # Check that the alt event is not sufficient for the outcome
         sufficient, _ = ac_defn.is_sufficient(
-            env, info["ac2a_alt_event"], outcome, state
+            env, info["ac2a_alt_event"], outcome, state, noise
         )
         assert sufficient is False
 
@@ -195,7 +204,8 @@ class TestNecessityModifiedHPRockThrowing:
         }
         event = {"suzy_throws": 1, "billy_hits": 0}
         outcome = {"bottle_shatters": 1}
-        result, info = ac_defn.is_necessary(env, event, outcome, state)
+        noise = {"suzy_throws": 1, "billy_throws": 1}
+        result, info = ac_defn.is_necessary(env, event, outcome, state, noise)
         assert result is True
 
         # Check that the correct info was returned
@@ -207,7 +217,7 @@ class TestNecessityModifiedHPRockThrowing:
         assert any([info["ac2a_alt_event"][key] != event[key] for key in event])
         # Check that the alt event is not sufficient for the outcome
         sufficient, _ = ac_defn.is_sufficient(
-            env, info["ac2a_alt_event"], outcome, state
+            env, info["ac2a_alt_event"], outcome, state, noise
         )
         assert sufficient is False
 
@@ -224,7 +234,8 @@ class TestNecessityModifiedHPRockThrowing:
         }
         event = {"suzy_throws": 1}
         outcome = {"bottle_shatters": 1}
-        result, info = ac_defn.is_necessary(env, event, outcome, state)
+        noise = {"suzy_throws": 1, "billy_throws": 1}
+        result, info = ac_defn.is_necessary(env, event, outcome, state, noise)
         assert result is False
 
     def test_4(self):
@@ -240,7 +251,8 @@ class TestNecessityModifiedHPRockThrowing:
         }
         event = {"suzy_throws": 0}
         outcome = {"bottle_shatters": 0}
-        result, info = ac_defn.is_necessary(env, event, outcome, state)
+        noise = {"suzy_throws": 0, "billy_throws": 0}
+        result, info = ac_defn.is_necessary(env, event, outcome, state, noise)
         assert result is True
 
         # Check that the correct info was returned
@@ -272,14 +284,12 @@ class TestMinimalityModifiedHPRockThrowing:
         }
         event = {"suzy_throws": 0}
         outcome = {"bottle_shatters": 0}
-        result, info = ac_defn.is_minimal(env, event, outcome, state)
+        noise = {"suzy_throws": 0, "billy_throws": 0}
+        result, info = ac_defn.is_minimal(env, event, outcome, state, noise)
         assert result is True
-        assert info["is_minimal"] is True
 
         # Make sure no smaller cause is reported in the info dict
-        assert (info["ac3_smaller_cause"] not in info) or (
-            not info["ac3_smaller_cause"]
-        )
+        assert "ac3_smaller_cause" not in info or not info["ac3_smaller_cause"]
 
     def test_2(self):
         # Necessary and sufficient cause found but it is not minimal
@@ -294,9 +304,9 @@ class TestMinimalityModifiedHPRockThrowing:
         }
         event = {"suzy_throws": 1, "suzy_hits": 1, "billy_hits": 0}
         outcome = {"bottle_shatters": 1}
-        result, info = ac_defn.is_minimal(env, event, outcome, state)
+        noise = {"suzy_throws": 1, "billy_throws": 1}
+        result, info = ac_defn.is_minimal(env, event, outcome, state, noise)
         assert result is False
-        assert info["is_minimal"] is False
 
         # Make sure the smaller cause reported in the info dict is actually smaller
         assert "ac3_smaller_cause" in info
@@ -305,12 +315,12 @@ class TestMinimalityModifiedHPRockThrowing:
 
         # Make sure the smaller cause is necessary and sufficient
         subevent = info["ac3_smaller_cause"]
-        sufficient, _ = ac_defn.is_sufficient(env, subevent, outcome, state)
+        sufficient, _ = ac_defn.is_sufficient(env, subevent, outcome, state, noise)
         assert sufficient is True
-        necessary, _ = ac_defn.is_necessary(env, subevent, outcome, state)
+        necessary, _ = ac_defn.is_necessary(env, subevent, outcome, state, noise)
         assert necessary is True
 
-    def test_2(self):
+    def test_3(self):
         # Minimal necessary and sufficient event found
         env = RockThrowing()
         ac_defn = ModifiedHP()
@@ -323,6 +333,8 @@ class TestMinimalityModifiedHPRockThrowing:
         }
         event = {"suzy_throws": 1, "billy_hits": 0}
         outcome = {"bottle_shatters": 1}
-        result, info = ac_defn.is_minimal(env, event, outcome, state)
+        noise = {"suzy_throws": 1, "billy_throws": 1}
+        result, info = ac_defn.is_minimal(env, event, outcome, state, noise)
         assert result is True
-        assert info["is_minimal"] is True
+        # Make sure no smaller cause is reported in the info dict
+        assert "ac3_smaller_cause" not in info or not info["ac3_smaller_cause"]

@@ -38,9 +38,10 @@ class ACDefinition:
             if state[var] != value:
                 incorrect_events[var] = event[var]
                 factual = False
+                print(f"{var} not factual")
         for var, value in outcome.items():
             if state[var] != value:
-                incorrect_outcomes[var] = event[var]
+                incorrect_outcomes[var] = outcome[var]
                 factual = False
 
         # Report any incorrect events or outcomes
@@ -50,6 +51,7 @@ class ACDefinition:
             info["incorrect_outcomes"] = incorrect_outcomes
 
         # Return the result and any additional info
+
         return factual, info
 
     def is_necessary(
@@ -124,12 +126,13 @@ class ACDefinition:
             return True, info
 
         # Find all possible subsets of the set of variables in the event
-        for subevent in get_all_subevents(event, reverse=True):
+        all_subevents = get_all_subevents(event, reverse=True)
+        for subevent in all_subevents:
             env.reset()
-            subevent_is_necessary = self.is_necessary(
+            subevent_is_necessary, _ = self.is_necessary(
                 env, subevent, outcome, state, noise
             )
-            subevent_is_sufficient = self.is_sufficient(
+            subevent_is_sufficient, _ = self.is_sufficient(
                 env, subevent, outcome, state, noise
             )
             if subevent_is_necessary and subevent_is_sufficient:
