@@ -138,10 +138,14 @@ class StructuralCausalModel:
             raise ValueError(f"Variable {variable_name} not found.")
         if self.variables[variable_name].var_type == "bool":
             if value not in [0, 1]:
-                raise ValueError(f"Value for boolean variable must be 0 or 1.")
+                raise ValueError(
+                    f"Value for boolean variable must be 0 or 1, {value} given."
+                )
         elif self.variables[variable_name].var_type == "int":
-            if not isinstance(value, int):
-                raise ValueError(f"Value for integer variable must be an integer.")
+            if int(value) != value:
+                raise ValueError(
+                    f"Value for integer variable must be an integer, {value} given"
+                )
             if (
                 value < self.variables[variable_name].support[0]
                 or value > self.variables[variable_name].support[1]
@@ -151,7 +155,9 @@ class StructuralCausalModel:
                 )
         elif self.variables[variable_name].var_type == "float":
             if not isinstance(value, (int, float)):
-                raise ValueError(f"Value for float variable must be a number.")
+                raise ValueError(
+                    f"Value for float variable must be a number, {value} given."
+                )
             if (
                 value < self.variables[variable_name].support[0]
                 or value > self.variables[variable_name].support[1]

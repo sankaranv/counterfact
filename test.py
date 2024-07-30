@@ -1,28 +1,19 @@
-from actual_cause.examples import RockThrowing
 from actual_cause.definitions import ModifiedHP
+from actual_cause.examples.mover_1d import Mover1D
 
-env = RockThrowing()
+env = Mover1D(world_length=4)
 ac_defn = ModifiedHP()
-state = {
-    "suzy_throws": 1,
-    "billy_throws": 1,
-    "suzy_hits": 1,
-    "billy_hits": 0,
-    "bottle_shatters": 1,
-}
-event = {"suzy_throws": 1, "billy_hits": 0}
-outcome = {"bottle_shatters": 1}
-noise = {"suzy_throws": 1, "billy_throws": 1}
-print(f"Event: {event}")
-print(f"Outcome: {outcome}")
-print(f"State: {state}")
-result, info = ac_defn.is_sufficient(env, event, outcome, state, noise)
-print(f"Sufficient: {result}")
-print(f"Sufficiency info: {info}")
-result, info = ac_defn.is_necessary(env, event, outcome, state, noise)
-print(f"Necessary: {result}")
-print(f"Necessity info: {info}")
-result, info = ac_defn.is_minimal(env, event, outcome, state, noise)
-print(f"Minimal: {result}")
-print(f"Minimality info: {info}")
-print("ac3_smaller_cause" not in info)
+state = {"mover": 0, "obstacle": 1, "next_mover_pos": 1}
+event = {"obstacle": 1}
+outcome = {"next_mover_pos": 1}
+noise = {"mover": 0, "obstacle": 2}
+factual, info = ac_defn.is_factual(env, event, outcome, state, noise)
+print(f"Factual: {factual} Info: {info}")
+sufficient, info = ac_defn.is_sufficient(env, event, outcome, state, noise)
+print(f"Sufficient: {sufficient} Info: {info}")
+necessary, info = ac_defn.is_necessary(env, event, outcome, state, noise)
+print(f"Necessary: {necessary} Info: {info}")
+minimal, info = ac_defn.is_minimal(env, event, outcome, state, noise)
+print(f"Minimal: {minimal} Info: {info}")
+result, info = ac_defn.is_actual_cause(env, event, outcome, state, noise)
+print(f"Actual Cause: {result}! Info: {info}")
