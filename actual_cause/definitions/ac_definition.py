@@ -1,5 +1,5 @@
 from actual_cause.causal_models.scm import StructuralCausalModel
-from actual_cause.utils.utils import *
+from actual_cause.utils import *
 import numpy as np
 
 
@@ -122,6 +122,11 @@ class ACDefinition:
         """
 
         info = {}
+
+        # Save the current state of the model
+        env.original_graph = env.causal_graph.copy()
+        env.original_functions = env.structural_functions.copy()
+
         # Base case: singleton event
         if len(event.keys()) == 1:
             return True, info
@@ -141,8 +146,10 @@ class ACDefinition:
             )
             if subevent_is_necessary and subevent_is_sufficient:
                 info = {"ac3_smaller_cause": subevent}
+                env.reset()
                 return False, info
 
+        env.reset()
         return True, info
 
     def is_actual_cause(self, env, event, outcome, state, noise=None, **kwargs):
@@ -157,8 +164,6 @@ class ACDefinition:
         :return: answer: bool indicating whether the event is an actual cause
         :return: info: dict with additional info about the actual causality test
         """
-
-        # TODO - incorporate the witness set
 
         info = {
             "is_factual": False,

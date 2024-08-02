@@ -1,6 +1,7 @@
 from actual_cause.definitions.ac_definition import ACDefinition
 import numpy as np
 from actual_cause.inference import *
+from actual_cause.utils.subsets import get_all_subsets
 
 
 class ModifiedHP(ACDefinition):
@@ -8,17 +9,17 @@ class ModifiedHP(ACDefinition):
     def __init__(self):
         super().__init__()
 
-    def is_necessary_with_witness_old(
+    def is_necessary(
         self,
         env: StructuralCausalModel,
         event: dict,
         outcome: dict,
         state: dict,
         noise=None,
-        witness_set: list = None,
+        **kwargs,
     ):
         """
-        Check if the event is contrastively necessary under weak sufficiency given a witness set
+        Check if the event satisfies contrastive necessary under weak sufficiency given a witness set
         We need to find an alternative event that is not weakly sufficient for the outcome
         :param env:
         :param event:
@@ -31,16 +32,19 @@ class ModifiedHP(ACDefinition):
         info = {}
 
         # Build the witness
-        if witness_set is None:
-            witness = None
+        if "witness_set" in kwargs:
+            witness = {var: state[var] for var in kwargs["witness_set"]}
         else:
-            witness = {var: state[var] for var in witness_set}
+            witness = None
+
+        all_vars = list(env.variables.keys())
+        event_vars = list(event.keys())
+        outcome_vars = list(outcome.keys())
+        remaining_vars = list(set(all_vars) - set(event_vars) - set(outcome_vars))
 
         # Collect supports for all variables in the event
         supports = []
-        event_vars = []
         for var_name in event:
-            event_vars.append(var_name)
             var_support = env.variables[var_name].support
             var_type = env.variables[var_name].var_type
             if var_type == "float":
@@ -58,132 +62,91 @@ class ModifiedHP(ACDefinition):
             -1, len(supports)
         )
 
+        # Shuffle the event combinations
+        np.random.shuffle(event_combinations)
+
         # Check if any of the combinations are not sufficient for the outcome
         for alt_assignment in event_combinations:
-
-            # Reset the effect of prior interventions
-            env.reset()
-
-            # Apply the witness set intervention
-            if witness:
-                env.intervene(witness)
 
             # Ignore the original event
             if np.array_equal(alt_assignment, original_assignment):
                 continue
 
-            # Apply the intervention on the causal model to obtain an alternate outcome
+            # Set up alternative event
             alt_event = {var: value for var, value in zip(event_vars, alt_assignment)}
-            env.intervene(alt_event)
-            alt_state = env.get_state(noise)
-            alt_outcome = {var: alt_state[var] for var in outcome}
-            # Check if the sufficiency condition is violated by the alternative event and outcome
-            sufficient, ac2b_info = self.is_sufficient(
-                env, alt_event, outcome, alt_state, noise
-            )
-            if not sufficient:
-                info["ac2a_alt_event"] = alt_event
-                print(f"Alt event: {alt_event}")
-                print(f"Alt outcome: {alt_outcome}")
-                return True, info
 
-        # No other intervention on the event variables was insufficient for the observed outcome
-        return False, info
+            if witness is not None:
 
-    def is_necessary(
-        self,
-        env: StructuralCausalModel,
-        event: dict,
-        outcome: dict,
-        state: dict,
-        noise=None,
-        witness_set: list = None,
-        **kwargs,
-    ):
-        """
-        Check if the event is contrastively necessary under weak sufficiency given a witness set
-        We need to find an alternative event that is not weakly sufficient for the outcome
-        :param env:
-        :param event:
-        :param outcome:
-        :param state:
-        :param noise:
-        :param witness_set:
+                # Reset the effect of prior interventions
+                env.reset()
 
-        :return:
-        """
-        info = {}
-        event_vars = list(event.keys())
-        original_assignment = [event[var] for var in event_vars]
+                # Apply the witness set intervention if a witness set is provided
+                env.intervene(witness)
 
-        # Build the witness
-        if witness_set is None:
-            witness = None
-        else:
-            witness = {var: state[var] for var in witness_set}
+                # Apply the alternative event as an intervention on the causal model to obtain an alternate outcome
+                env.intervene(alt_event)
+                alt_state = env.get_state(noise)
+                alt_outcome = {var: alt_state[var] for var in outcome}
+                # Check if the sufficiency condition is violated by the alternative event and outcome
+                sufficient, ac2b_info = self.is_sufficient(
+                    env, alt_event, outcome, alt_state, noise
+                )
+                if not sufficient:
+                    info["ac2a_alt_event"] = alt_event
+                    info["ac2a_witness"] = witness
+                    env.reset()
+                    return True, info
 
-        # Assign max number of attempts to find an alt event
-        if "max_attempts" in kwargs:
-            max_attempts = kwargs["max_attempts"]
-        else:
-            max_attempts = 1000
+            else:
+                # No witness provided, so we try all possible witness sets
+                for witness_set in get_all_subsets(
+                    remaining_vars, shuffle_by_size=True
+                ):
 
-        # We will find a random alt event whose value is insufficient for the outcome
-        attempted_alt_events = set()
-        attempted_alt_events.add(tuple(original_assignment))
+                    # Reset the effect of prior interventions
+                    env.reset()
 
-        while len(attempted_alt_events) < max_attempts:
+                    # Ignore the witness set that is the same as the original event
+                    witness = {var: state[var] for var in witness_set}
+                    if set(witness_set) == set(event_vars):
+                        continue
 
-            # Reset the effect of prior interventions
-            env.reset()
+                    # Apply the witness set intervention
+                    env.intervene(witness)
 
-            # Generate a random alternative event
-            alt_event = {}
-            for var_name in event_vars:
-                var = env.variables[var_name]
-                if var.var_type == "int":
-                    alt_event[var_name] = np.random.choice(
-                        range(var.support[0], var.support[1] + 1)
+                    # Apply the intervention on the causal model to obtain an alternate outcome
+                    alt_event = {
+                        var: value for var, value in zip(event_vars, alt_assignment)
+                    }
+                    env.intervene(alt_event)
+
+                    # Print the functions of the SCM that are constant functions
+                    alt_state = env.get_state(noise)
+                    alt_outcome = {var: alt_state[var] for var in outcome}
+
+                    # Check if the sufficiency condition is violated by the alternative event and outcome
+                    sufficient, ac2b_info = self.is_sufficient(
+                        env, alt_event, outcome, alt_state, noise
                     )
-                elif var.var_type in ["discrete", "bool"]:
-                    alt_event[var_name] = np.random.choice(var.support)
-                elif var.var_type == "float":
-                    alt_value = np.random.uniform(var.support[0], var.support[1])
-                    if "rounding" in kwargs:
-                        alt_value = round(alt_value, kwargs["rounding"])
-                    else:
-                        alt_value = round(alt_value, 2)
-                    alt_event[var_name] = alt_value
+                    if not sufficient:
 
-            # Check if the alt event has already been attempted
-            alt_event_tuple = tuple(alt_event.items())
-            if alt_event_tuple in attempted_alt_events:
-                continue
+                        # Collect information
+                        info["ac2a_alt_event"] = alt_event
+                        info["ac2a_witness"] = witness
+                        if "ac2b_alt_outcome" in ac2b_info:
+                            info["ac2a_alt_outcome"] = ac2b_info["ac2b_alt_outcome"]
+                        # Reset the model to its original state and return result
+                        env.reset()
+                        return True, info
 
-            # If witness is available, apply the witness set intervention
-            env.intervene(witness)
-
-            # Apply the intervention on the causal model to obtain an alternate outcome
-            env.intervene(alt_event)
-            alt_state = env.get_state(noise)
-            alt_outcome = {var: alt_state[var] for var in outcome}
-
-            # Check if the sufficiency condition is violated by the alternative event and outcome
-            sufficient, ac2b_info = self.is_sufficient(
-                env, alt_event, outcome, alt_state, noise
-            )
-            if not sufficient:
-                info["ac2a_alt_event"] = alt_event
-                print(f"Alt event: {alt_event}")
-                print(f"Alt outcome: {alt_outcome}")
-                return True, info
+                # Reset witness when moving to the next alt event
+                witness = None
 
         # No other intervention on the event variables was insufficient for the observed outcome
+        # Reset the model to its original state and return result
         return False, info
 
-    def is_sufficient(
-        self, env, event, outcome, state, noise=None, witness_set=None, solver=None
-    ):
+    def is_sufficient(self, env, event, outcome, state, noise=None, witness_set=None):
         """
         Check if the event is weakly sufficient for the outcome in the state
         :param env:
@@ -198,9 +161,6 @@ class ModifiedHP(ACDefinition):
 
         info = {}
 
-        # Reset the effect of prior interventions
-        env.reset()
-
         # Intervene on the model to apply the given event
         env.intervene(event)
         new_state = env.get_state(noise)
@@ -208,6 +168,8 @@ class ModifiedHP(ACDefinition):
         for var in outcome:
             if new_state[var] != outcome[var]:
                 info["ac2b_alt_outcome"] = {v: new_state[v] for v in outcome}
+                env.reset()
                 return False, info
 
+        env.reset()
         return True, info

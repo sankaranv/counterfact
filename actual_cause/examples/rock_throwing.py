@@ -24,10 +24,10 @@ class RockThrowing(StructuralCausalModel):
 
         # Create structural functions
         def suzy_throws(inputs, noise):
-            return noise
+            return noise["suzy_throws"]
 
         def billy_throws(inputs, noise):
-            return noise
+            return noise["billy_throws"]
 
         def suzy_hits(inputs, noise):
             return inputs["suzy_throws"]
