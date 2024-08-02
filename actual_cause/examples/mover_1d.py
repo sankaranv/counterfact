@@ -16,6 +16,12 @@ class Mover1D(StructuralCausalModel):
             ]
         )
 
+        self.formatted_var_names = {
+            "mover": "$m$",
+            "obstacle": "$o$",
+            "next_mover_pos": "$m^\prime$",
+        }
+
         def mover(inputs, noise):
             return noise
 

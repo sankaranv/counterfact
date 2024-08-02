@@ -1,4 +1,4 @@
-from actual_cause.definitions.base import ACDefinition
+from actual_cause.definitions.ac_definition import ACDefinition
 from actual_cause.causal_models.scm import StructuralCausalModel
 
 

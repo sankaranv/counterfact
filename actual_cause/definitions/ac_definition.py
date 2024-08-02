@@ -1,5 +1,6 @@
 from actual_cause.causal_models.scm import StructuralCausalModel
 from actual_cause.utils.utils import *
+import numpy as np
 
 
 class ACDefinition:
@@ -128,7 +129,10 @@ class ACDefinition:
         # Find all possible subsets of the set of variables in the event
         all_subevents = get_all_subevents(event, reverse=True)
         for subevent in all_subevents:
+
+            # Reset the effect of prior interventions
             env.reset()
+
             subevent_is_necessary, _ = self.is_necessary(
                 env, subevent, outcome, state, noise
             )
@@ -204,13 +208,11 @@ class ACDefinition:
             info["is_minimal"] = False
             return False, info
 
-    def get_actual_causes(self, env, outcome, state, noise=None):
-        """
-        Find all actual causes of the outcome in the state
-        :param env: StructuralCausalModel
-        :param outcome: dictionary of values of the outcome variables
-        :param state: dictionary of values of all observable variables
-        :param noise: dictionary of values of all exogenous noise variables
-        :return:
-        """
-        pass
+    def solve(
+        self,
+        env: StructuralCausalModel,
+        outcome_vars: list,
+        noise=None,
+        **kwargs,
+    ):
+        raise NotImplementedError(f"Solver not implemented")

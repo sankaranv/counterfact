@@ -62,6 +62,8 @@ class StructuralCausalModel:
             self.causal_graph = graph
         self.original_graph = copy.deepcopy(self.causal_graph)
         self.original_functions: Dict[str, StructuralFunction] = {}
+        self.topological_order = None
+        self.formatted_var_names = {}
 
     def add_variable(self, variable: Variable):
         """
@@ -71,9 +73,14 @@ class StructuralCausalModel:
         """
         if variable.name in self.variables:
             raise ValueError(f"Variable {variable.name} already exists")
+
+        # Add variable to the model and causal graph
         self.variables[variable.name] = variable
         self.causal_graph.add_node(variable.name)
         self.original_graph.add_node(variable.name)
+
+        # Update topological ordering
+        self.topological_order = list(nx.topological_sort(self.causal_graph))
 
     def add_variables(self, variables: List[Variable]):
         """
@@ -101,6 +108,9 @@ class StructuralCausalModel:
         # Create edges in the causal graph from parents of the function to the variable
         for parent in structural_function.parents:
             self.add_edge(parent, variable_name)
+
+        # Update topological ordering
+        self.topological_order = list(nx.topological_sort(self.causal_graph))
 
     def set_structural_functions(
         self, structural_functions: Dict[str, StructuralFunction]
