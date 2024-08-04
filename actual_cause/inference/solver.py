@@ -73,7 +73,7 @@ class ACSolver:
             for var in outcome_vars:
                 outcome[var] = state[var]
             # Find all actual causes for the outcome in the given state
-            actual_causes, _ = self.solve(state, outcome, noise)
+            actual_causes = self.solve(state, outcome, noise)
 
             # Add the state, outcome and actual causes to the table
             # One column each for state, outcome, and actual causes
@@ -87,7 +87,7 @@ class ACSolver:
                 ("state", k): v for k, v in state.items() if k not in outcome_vars
             }
             combined_row.update({("outcome", k): v for k, v in outcome.items()})
-            combined_row[("actual_causes", "")] = actual_causes
+            combined_row[("actual_causes", "")] = list(actual_causes.keys())
             # Add row to table
             ac_table = ac_table._append(combined_row, ignore_index=True)
 
@@ -123,4 +123,4 @@ class ACSolver:
         :return: actual_causes: list of variable names or tuples of variable names whose values are actual causes
         :return: info: dict with additional info about the actual causality test
         """
-        return [], {}
+        raise NotImplementedError

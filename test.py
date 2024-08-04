@@ -30,5 +30,16 @@ outcome = {"bottle_shatters": 1}
 print("\n Running solver...\n")
 
 solver = HPExhaustiveSearch(env, ac_defn)
-actual_causes = solver.solve(state, outcome, noise)
-print(actual_causes.keys())
+ac_table = solver.solve_all_states(env, ac_defn, outcome_vars=["bottle_shatters"])
+var_names = {
+    "suzy_throws": "ST",
+    "billy_throws": "BT",
+    "suzy_hits": "SH",
+    "billy_hits": "BH",
+    "bottle_shatters": "BS",
+}
+
+make_latex_table(ac_table, "tables/rock_throwing_table.tex", var_names)
+
+# actual_causes = solver.solve(state, outcome, noise)
+# print(actual_causes.keys())

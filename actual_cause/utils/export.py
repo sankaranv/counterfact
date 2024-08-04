@@ -21,6 +21,9 @@ def make_latex_table(df: pd.DataFrame, filename: str, var_names: dict):
     num_state_vars = sum([1 for col in df.columns if col[0] == "state"])
     num_outcome_vars = sum([1 for col in df.columns if col[0] == "outcome"])
 
+    # Use the order of variables in the columns of the state variables
+    var_order = [var_names[col[1]] for col in df.columns if col[0] == "state"]
+
     # Columns in dataframe are either ('state, 'old_var_name'), ('outcome', 'old_var_name'), or ('actual_causes', '')
     # Rename to ('State', 'new_var_name'), ('Outcome', 'new_var_name'), ('Actual Causes', '')
     columns = []
@@ -43,9 +46,30 @@ def make_latex_table(df: pd.DataFrame, filename: str, var_names: dict):
 
     # Actual Causes column contains a list of variables names, remap them to human-readable form and join into a string
     if ("Actual Causes", "") in formatted_df.columns:
-        formatted_df[("Actual Causes", "")] = formatted_df[("Actual Causes", "")].apply(
-            lambda x: ", ".join([var_names[var] for var in x])
-        )
+        for i, causes in enumerate(formatted_df[("Actual Causes", "")]):
+
+            for j, cause in enumerate(causes):
+                if len(cause) == 1:
+                    causes[j] = var_names[cause[0]]
+                else:
+                    causes[j] = [var_names[var] for var in cause]
+                    print(causes[j])
+                    # Sort using the var_order
+                    causes[j] = sorted(
+                        causes[j],
+                        key=lambda x: (
+                            var_order.index(x) if len(x) > 1 else var_order.index(x[0])
+                        ),
+                    )
+
+            # Sort causes based on the first element of each cause, or the cause itself if it is a singleton
+            causes = sorted(
+                causes,
+                key=lambda x: (
+                    var_order.index(x) if len(x) > 1 else var_order.index(x[0])
+                ),
+            )
+            formatted_df.at[i, ("Actual Causes", "")] = ", ".join(causes)
 
     # Wrap all numeric values in math mode
     formatted_df = formatted_df.map(to_latex_math_mode)
@@ -56,6 +80,8 @@ def make_latex_table(df: pd.DataFrame, filename: str, var_names: dict):
     else:
         last_col_align = "c"
     column_format = "c" * (len(formatted_df.columns) - 1) + last_col_align
+
+    print(formatted_df)
 
     # Generate latex code
     latex_table = formatted_df.to_latex(
@@ -94,5 +120,11 @@ def make_latex_table(df: pd.DataFrame, filename: str, var_names: dict):
 
     if not os.path.exists(os.path.dirname(filename)):
         os.makedirs(os.path.dirname(filename))
-    with open(filename + ".tex", "w") as f:
-        f.write(latex_table)
+
+    # Check if filename already ends with .tex
+    if filename.endswith(".tex"):
+        with open(filename, "w") as f:
+            f.write(latex_table)
+    else:
+        with open(filename + ".tex", "w") as f:
+            f.write(latex_table)
