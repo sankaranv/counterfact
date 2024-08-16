@@ -166,6 +166,7 @@ class ACDefinition:
         """
 
         info = {
+            "ac_definition": self.__class__.__name__,
             "is_factual": False,
             "is_sufficient": None,
             "is_necessary": None,

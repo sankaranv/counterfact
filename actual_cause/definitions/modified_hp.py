@@ -1,4 +1,4 @@
-from actual_cause.definitions.ac_definition import ACDefinition
+from actual_cause.definitions import ACDefinition
 import numpy as np
 from actual_cause.inference import *
 from actual_cause.utils.subsets import get_all_subsets
@@ -29,7 +29,7 @@ class ModifiedHP(ACDefinition):
         :param witness_set:
         :return:
         """
-        info = {}
+        info = {"necessity_defn": "ContrastiveNecessity"}
 
         # Build the witness
         if "witness_set" in kwargs:
@@ -146,7 +146,7 @@ class ModifiedHP(ACDefinition):
         # Reset the model to its original state and return result
         return False, info
 
-    def is_sufficient(self, env, event, outcome, state, noise=None, witness_set=None):
+    def is_sufficient(self, env, event, outcome, state, noise=None, **kwargs):
         """
         Check if the event is weakly sufficient for the outcome in the state
         :param env:
@@ -159,12 +159,22 @@ class ModifiedHP(ACDefinition):
         :return:
         """
 
-        info = {}
+        info = {"sufficiency_defn": "WeakSufficiency"}
+        # Build the witness
+        if "witness_set" in kwargs:
+            witness = {var: state[var] for var in kwargs["witness_set"]}
+        else:
+            witness = None
 
         # Intervene on the model to apply the given event
         env.intervene(event)
-        new_state = env.get_state(noise)
+
+        # Intervene on the model to apply the witness
+        if witness is not None:
+            env.intervene(witness)
+
         # Check if the outcome is satisfied
+        new_state = env.get_state(noise)
         for var in outcome:
             if new_state[var] != outcome[var]:
                 info["ac2b_alt_outcome"] = {v: new_state[v] for v in outcome}
