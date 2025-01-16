@@ -33,14 +33,14 @@ def powerset(
         raise ValueError(f"Length must be between 0 and {len(s)}, {length} given.")
     else:
         lower_bound = length
-        upper_bound = length + 1
+        upper_bound = length
 
     if reverse:
         return chain.from_iterable(
-            combinations(s, r) for r in range(upper_bound, lower_bound, -1)
+            combinations(s, r) for r in range(upper_bound - 1, lower_bound - 1, -1)
         )
     return chain.from_iterable(
-        combinations(s, r) for r in range(lower_bound, upper_bound)
+        combinations(s, r) for r in range(lower_bound, upper_bound + 1)
     )
 
 
