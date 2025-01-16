@@ -1,9 +1,17 @@
-from actual_cause.definitions import ModifiedHP, DirectActualCause
+from actual_cause.definitions import (
+    ModifiedHP,
+    DirectActualCause,
+    FunctionalActualCause,
+)
 from actual_cause.examples import RockThrowing
 from actual_cause.inference import HPExhaustiveSearch
 from actual_cause.utils import *
+import sys
 
 env = RockThrowing()
+
+ac_defn = FunctionalActualCause()
+sys.exit(0)
 ac_defn = DirectActualCause()
 state = {
     "suzy_throws": 1,

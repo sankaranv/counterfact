@@ -3,14 +3,15 @@ import itertools
 from typing import List
 from actual_cause.causal_models.variables import Variable, ExogenousNoise
 from actual_cause.causal_models.scm import StructuralCausalModel, StructuralFunction
-from actual_cause.definitions import *
+from actual_cause.definitions import ACDefinition
 from actual_cause.inference import *
 
 
 class ACSolver:
 
     def __init__(self, env: StructuralCausalModel, ac_defn: ACDefinition):
-        pass
+        self.env = env
+        self.ac_defn = ac_defn
 
     def solve_all_states(
         self, env: StructuralCausalModel, ac_defn: ACDefinition, outcome_vars: List[str]

@@ -20,8 +20,8 @@ class OriginalHP(ACDefinition):
         **kwargs,
     ):
         """
-        Check if the event satisfies contrastive necessary under weak sufficiency given a witness set
-        We need to find an alternative event that is not weakly sufficient for the outcome
+        There is a partition of the set of state variables S into two sets Z and W, where X is contained in Z
+        For this partition, there is an intervention X=x' and W=w* under which the outcome is not satisfied
         :param env:
         :param event:
         :param outcome:
@@ -30,7 +30,7 @@ class OriginalHP(ACDefinition):
         :param witness_set:
         :return:
         """
-        info = {"necessity_defn": "ContrastiveNecessity"}
+        info = {"necessity_defn": "OriginalHP_AC2a"}
 
         # Build the witness
         if "witness_set" in kwargs:
