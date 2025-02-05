@@ -1,0 +1,8 @@
+tables/
+plots/
+data/
+*.pyc
+.vscode
+__pycache__/
+*.py[cod]
+*.log
