@@ -3,7 +3,7 @@ import itertools
 from typing import List
 from actual_cause.causal_models.variables import Variable, ExogenousNoise
 from actual_cause.causal_models.scm import StructuralCausalModel, StructuralFunction
-from actual_cause.definitions.ac_definition import ACDefinition
+from actual_cause.definitions import ACDefinition
 from actual_cause.inference import *
 
 

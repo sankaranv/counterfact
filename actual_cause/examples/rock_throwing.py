@@ -1,6 +1,6 @@
 from actual_cause.causal_models.scm import StructuralCausalModel, StructuralFunction
-from actual_cause.causal_models.variables import Variable, ExogenousNoise
-import numpy as np
+import torch
+import pyro.distributions as dist
 
 
 class RockThrowing(StructuralCausalModel):
@@ -12,15 +12,14 @@ class RockThrowing(StructuralCausalModel):
 
         # Add all variables
 
-        self.add_variables(
-            [
-                Variable("suzy_throws", "bool"),
-                Variable("billy_throws", "bool"),
-                Variable("suzy_hits", "bool"),
-                Variable("billy_hits", "bool"),
-                Variable("bottle_shatters", "bool"),
-            ]
-        )
+        for var in [
+            "suzy_throws",
+            "billy_throws",
+            "suzy_hits",
+            "billy_hits",
+            "bottle_shatters",
+        ]:
+            self.add_variable(var, "bool", [0, 1])
 
         # Create structural functions
         def suzy_throws(inputs, noise):
@@ -36,25 +35,15 @@ class RockThrowing(StructuralCausalModel):
             return inputs["billy_throws"] * (1 - inputs["suzy_hits"])
 
         def bottle_shatters(inputs, noise):
-            return int(np.logical_or(inputs["suzy_hits"], inputs["billy_hits"]))
+            return (inputs["suzy_hits"] or inputs["billy_hits"]).int()
 
         # Set structural functions for the model
 
         self.set_structural_functions(
             {
-                "suzy_throws": StructuralFunction(
-                    suzy_throws,
-                    [],
-                    ExogenousNoise(
-                        "u_suzy_throws", lambda: np.random.choice([0, 1], p=[0.5, 0.5])
-                    ),
-                ),
+                "suzy_throws": StructuralFunction(suzy_throws, [], dist.Bernoulli(0.5)),
                 "billy_throws": StructuralFunction(
-                    billy_throws,
-                    [],
-                    ExogenousNoise(
-                        "u_billy_throws", lambda: np.random.choice([0, 1], p=[0.5, 0.5])
-                    ),
+                    billy_throws, [], dist.Bernoulli(0.5)
                 ),
                 "suzy_hits": StructuralFunction(suzy_hits, ["suzy_throws"], None),
                 "billy_hits": StructuralFunction(

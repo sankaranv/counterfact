@@ -87,7 +87,6 @@ class ModifiedHP(ACDefinition):
                 env.intervene(alt_event)
                 alt_state = env.get_state(noise)
                 alt_outcome = {var: alt_state[var] for var in outcome}
-
                 # Check if the sufficiency condition is violated by the alternative event and outcome
                 sufficient, ac2b_info = self.is_sufficient(
                     env, alt_event, outcome, alt_state, noise
@@ -99,13 +98,9 @@ class ModifiedHP(ACDefinition):
                     return True, info
 
             else:
-
                 # No witness provided, so we try all possible witness sets
                 for witness_set in get_all_subsets(
-                    remaining_vars,
-                    shuffle_by_size=True,
-                    include_full=True,
-                    include_empty=True,
+                    remaining_vars, shuffle_by_size=True
                 ):
 
                     # Reset the effect of prior interventions

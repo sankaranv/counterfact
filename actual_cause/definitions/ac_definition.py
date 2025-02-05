@@ -132,39 +132,18 @@ class ACDefinition:
             return True, info
 
         # Find all possible subsets of the set of variables in the event
-        all_subevents = get_all_subevents(
-            event, reverse=True, include_empty=False, include_full=False
-        )
+        all_subevents = get_all_subevents(event, reverse=True)
         for subevent in all_subevents:
 
             # Reset the effect of prior interventions
             env.reset()
 
-            # If a witness set is given, include it in the intervention
-            if "witness_set" in kwargs:
-                subevent_is_necessary, _ = self.is_necessary(
-                    env,
-                    subevent,
-                    outcome,
-                    state,
-                    noise,
-                    witness_set=kwargs["witness_set"],
-                )
-                subevent_is_sufficient, _ = self.is_sufficient(
-                    env,
-                    subevent,
-                    outcome,
-                    state,
-                    noise,
-                    witness_set=kwargs["witness_set"],
-                )
-            else:
-                subevent_is_necessary, _ = self.is_necessary(
-                    env, subevent, outcome, state, noise
-                )
-                subevent_is_sufficient, _ = self.is_sufficient(
-                    env, subevent, outcome, state, noise
-                )
+            subevent_is_necessary, _ = self.is_necessary(
+                env, subevent, outcome, state, noise
+            )
+            subevent_is_sufficient, _ = self.is_sufficient(
+                env, subevent, outcome, state, noise
+            )
             if subevent_is_necessary and subevent_is_sufficient:
                 info = {"ac3_smaller_cause": subevent}
                 env.reset()
