@@ -1,6 +1,6 @@
 from actual_cause.causal_models.scm import StructuralCausalModel, StructuralFunction
-from actual_cause.causal_models.variables import Variable, ExogenousNoise
-import numpy as np
+import torch
+import pyro.distributions as dist
 
 # next_mover_pos = mover + 1 if obstacle != mover + 1 else mover
 
@@ -8,18 +8,15 @@ import numpy as np
 class Mover1D(StructuralCausalModel):
     def __init__(self, world_length: int = 4):
         super().__init__()
-        self.add_variables(
-            [
-                Variable("mover", "int", support=[0, world_length - 1]),
-                Variable("obstacle", "int", support=[0, world_length]),
-                Variable("next_mover_pos", "int", support=[1, world_length]),
-            ]
-        )
+
+        self.add_variable("mover", "int", [0, world_length - 1])
+        self.add_variable("obstacle", "int", [0, world_length])
+        self.add_variable("next_mover_pos", "int", [1, world_length])
 
         self.formatted_var_names = {
             "mover": "$m$",
             "obstacle": "$o$",
-            "next_mover_pos": "$m^\prime$",
+            "next_mover_pos": "$m^'$",
         }
 
         def mover(inputs, noise):
@@ -29,10 +26,10 @@ class Mover1D(StructuralCausalModel):
             return noise
 
         def next_mover_pos(inputs, noise):
-            return (
-                inputs["mover"] + 1
-                if inputs["obstacle"] != inputs["mover"] + 1
-                else inputs["mover"]
+            return torch.where(
+                inputs["obstacle"] != inputs["mover"] + 1,
+                inputs["mover"] + 1,
+                inputs["mover"],
             )
 
         self.set_structural_functions(
@@ -40,17 +37,13 @@ class Mover1D(StructuralCausalModel):
                 "mover": StructuralFunction(
                     mover,
                     [],
-                    ExogenousNoise(
-                        "u_mover",
-                        lambda: np.random.choice(list(range(world_length - 1))),
-                    ),
+                    dist.Categorical(torch.tensor([1 / world_length] * world_length)),
                 ),
                 "obstacle": StructuralFunction(
                     obstacle,
                     [],
-                    ExogenousNoise(
-                        "u_obstacle",
-                        lambda: np.random.choice(list(range(world_length))),
+                    dist.Categorical(
+                        torch.tensor([1 / (world_length + 1)] * (world_length + 1))
                     ),
                 ),
                 "next_mover_pos": StructuralFunction(

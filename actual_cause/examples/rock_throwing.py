@@ -35,7 +35,8 @@ class RockThrowing(StructuralCausalModel):
             return inputs["billy_throws"] * (1 - inputs["suzy_hits"])
 
         def bottle_shatters(inputs, noise):
-            return (inputs["suzy_hits"] or inputs["billy_hits"]).int()
+            dtype = inputs["suzy_hits"].dtype
+            return torch.logical_or(inputs["suzy_hits"], inputs["billy_hits"]).to(dtype)
 
         # Set structural functions for the model
 

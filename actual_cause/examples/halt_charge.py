@@ -1,18 +1,15 @@
 from actual_cause.causal_models.scm import StructuralCausalModel, StructuralFunction
-from actual_cause.causal_models.variables import Variable, ExogenousNoise
-import numpy as np
+import torch
+import pyro.distributions as dist
 
 
 class HaltOrCharge(StructuralCausalModel):
     def __init__(self):
         super().__init__()
-        self.add_variables(
-            [
-                Variable("major", "int"),
-                Variable("sergeant", "bool"),
-                Variable("corporal", "int"),
-            ]
-        )
+
+        self.add_variable("major", "discrete", [0, 1, 2])
+        self.add_variable("sergeant", "bool", [0, 1])
+        self.add_variable("corporal", "bool", [0, 1])
 
         def major(inputs, noise):
             return noise
@@ -21,22 +18,16 @@ class HaltOrCharge(StructuralCausalModel):
             return noise
 
         def corporal(inputs, noise):
-            return inputs["sergeant"] if inputs["major"] == 2 else inputs["major"]
+            return torch.where(
+                inputs["major"] == 2, inputs["sergeant"], inputs["major"]
+            )
 
         self.set_structural_functions(
             {
                 "major": StructuralFunction(
-                    major,
-                    [],
-                    ExogenousNoise("u_major", lambda: np.random.choice([0, 1, 2])),
+                    major, [], dist.Categorical(torch.tensor([0.5, 0.25, 0.25]))
                 ),
-                "sergeant": StructuralFunction(
-                    sergeant,
-                    [],
-                    ExogenousNoise(
-                        "u_sergeant", lambda: np.random.choice([0, 1], p=[0.5, 0.5])
-                    ),
-                ),
+                "sergeant": StructuralFunction(sergeant, [], dist.Bernoulli(0.5)),
                 "corporal": StructuralFunction(corporal, ["major", "sergeant"], None),
             }
         )

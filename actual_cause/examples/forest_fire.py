@@ -1,18 +1,14 @@
 from actual_cause.causal_models.scm import StructuralCausalModel, StructuralFunction
-from actual_cause.causal_models.variables import Variable, ExogenousNoise
-import numpy as np
+import torch
+import pyro.distributions as dist
 
 
 class ForestFireDisjunctive(StructuralCausalModel):
     def __init__(self):
         super().__init__()
-        self.add_variables(
-            [
-                Variable("lightning", "bool"),
-                Variable("arson", "bool"),
-                Variable("fire", "bool"),
-            ]
-        )
+
+        for var in ["lightning", "arson", "fire"]:
+            self.add_variable(var, "bool", [0, 1])
 
         def lightning(inputs, noise):
             return noise
@@ -21,24 +17,13 @@ class ForestFireDisjunctive(StructuralCausalModel):
             return noise
 
         def fire(inputs, noise):
-            return int(np.logical_or(inputs["lightning"], inputs["arson"]))
+            dtype = inputs["lightning"].dtype
+            return torch.logical_or(inputs["lightning"], inputs["arson"]).to(dtype)
 
         self.set_structural_functions(
             {
-                "lightning": StructuralFunction(
-                    lightning,
-                    [],
-                    ExogenousNoise(
-                        "u_lightning", lambda: np.random.choice([0, 1], p=[0.5, 0.5])
-                    ),
-                ),
-                "arson": StructuralFunction(
-                    arson,
-                    [],
-                    ExogenousNoise(
-                        "u_arson", lambda: np.random.choice([0, 1], p=[0.5, 0.5])
-                    ),
-                ),
+                "lightning": StructuralFunction(lightning, [], dist.Bernoulli(0.5)),
+                "arson": StructuralFunction(arson, [], dist.Bernoulli(0.5)),
                 "fire": StructuralFunction(fire, ["lightning", "arson"], None),
             }
         )
@@ -47,13 +32,9 @@ class ForestFireDisjunctive(StructuralCausalModel):
 class ForestFireConjunctive(StructuralCausalModel):
     def __init__(self):
         super().__init__()
-        self.add_variables(
-            [
-                Variable("lightning", "bool"),
-                Variable("arson", "bool"),
-                Variable("fire", "bool"),
-            ]
-        )
+
+        for var in ["lightning", "arson", "fire"]:
+            self.add_variable(var, "bool", [0, 1])
 
         def lightning(inputs, noise):
             return noise
@@ -62,24 +43,13 @@ class ForestFireConjunctive(StructuralCausalModel):
             return noise
 
         def fire(inputs, noise):
-            return inputs["lightning"] and inputs["arson"]
+            dtype = inputs["lightning"].dtype
+            return torch.logical_and(inputs["lightning"], inputs["arson"]).to(dtype)
 
         self.set_structural_functions(
             {
-                "lightning": StructuralFunction(
-                    lightning,
-                    [],
-                    ExogenousNoise(
-                        "u_lightning", lambda: np.random.choice([0, 1], p=[0.5, 0.5])
-                    ),
-                ),
-                "arson": StructuralFunction(
-                    arson,
-                    [],
-                    ExogenousNoise(
-                        "u_arson", lambda: np.random.choice([0, 1], p=[0.5, 0.5])
-                    ),
-                ),
+                "lightning": StructuralFunction(lightning, [], dist.Bernoulli(0.5)),
+                "arson": StructuralFunction(arson, [], dist.Bernoulli(0.5)),
                 "fire": StructuralFunction(fire, ["lightning", "arson"], None),
             }
         )
@@ -88,15 +58,15 @@ class ForestFireConjunctive(StructuralCausalModel):
 class ForestFireRainStorm(StructuralCausalModel):
     def __init__(self):
         super().__init__()
-        self.add_variables(
-            [
-                Variable("april_showers", "bool"),
-                Variable("may_electric_storm", "bool"),
-                Variable("june_electric_storm", "bool"),
-                Variable("fire_in_may", "bool"),
-                Variable("fire_in_june", "bool"),
-            ]
-        )
+
+        for var in [
+            "april_showers",
+            "may_electric_storm",
+            "june_electric_storm",
+            "fire_in_may",
+            "fire_in_june",
+        ]:
+            self.add_variable(var, "bool", [0, 1])
 
         def april_showers(inputs, noise):
             return noise
@@ -108,38 +78,31 @@ class ForestFireRainStorm(StructuralCausalModel):
             return noise
 
         def fire_in_may(inputs, noise):
-            return int(inputs["may_electric_storm"] and not inputs["april_showers"])
+            dtype = inputs["may_electric_storm"].dtype
+            return torch.logical_and(
+                inputs["may_electric_storm"], torch.logical_not(inputs["april_showers"])
+            ).to(dtype)
 
         def fire_in_june(inputs, noise):
-            return inputs["june_electric_storm"] and (
-                inputs["april_showers"] or not inputs["may_electric_storm"]
-            )
+            dtype = inputs["june_electric_storm"].dtype
+            return torch.logical_and(
+                inputs["june_electric_storm"],
+                torch.logical_or(
+                    inputs["april_showers"],
+                    torch.logical_not(inputs["may_electric_storm"]),
+                ),
+            ).to(dtype)
 
         self.set_structural_functions(
             {
                 "april_showers": StructuralFunction(
-                    april_showers,
-                    [],
-                    ExogenousNoise(
-                        "u_april_showers",
-                        lambda: np.random.choice([0, 1], p=[0.5, 0.5]),
-                    ),
+                    april_showers, [], dist.Bernoulli(0.5)
                 ),
                 "may_electric_storm": StructuralFunction(
-                    may_electric_storm,
-                    [],
-                    ExogenousNoise(
-                        "u_may_electric_storm",
-                        lambda: np.random.choice([0, 1], p=[0.5, 0.5]),
-                    ),
+                    may_electric_storm, [], dist.Bernoulli(0.5)
                 ),
                 "june_electric_storm": StructuralFunction(
-                    june_electric_storm,
-                    [],
-                    ExogenousNoise(
-                        "u_june_electric_storm",
-                        lambda: np.random.choice([0, 1], p=[0.5, 0.5]),
-                    ),
+                    june_electric_storm, [], dist.Bernoulli(0.5)
                 ),
                 "fire_in_may": StructuralFunction(
                     fire_in_may, ["may_electric_storm", "april_showers"], None
