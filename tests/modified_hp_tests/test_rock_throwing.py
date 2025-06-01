@@ -1,6 +1,6 @@
 import pytest
-from actual_cause.examples import RockThrowing
-from actual_cause.definitions import ModifiedHP
+from counterfact.examples import RockThrowing
+from counterfact.definitions import ModifiedHP
 
 
 class TestAC1ModifiedHPRockThrowing:
@@ -76,7 +76,7 @@ class TestAC1ModifiedHPRockThrowing:
         # Check if the given info is correct
         assert "incorrect_events" in info
         assert "suzy_throws" in info["incorrect_events"]
-        assert info["incorrect_events"]["suzy_throws"] == 0
+        assert info["incorrect_events"]["suzy_throws"] is 0
 
     def test_5(self):
         # Incorrect outcome, should return False
@@ -98,7 +98,7 @@ class TestAC1ModifiedHPRockThrowing:
         # Check if the given info is correct
         assert "incorrect_outcomes" in info
         assert "bottle_shatters" in info["incorrect_outcomes"]
-        assert info["incorrect_outcomes"]["bottle_shatters"] == 0
+        assert info["incorrect_outcomes"]["bottle_shatters"] is 0
 
 
 class TestSufficiencyModifiedHPRockThrowing:
@@ -176,7 +176,6 @@ class TestNecessityModifiedHPRockThrowing:
         outcome = {"bottle_shatters": 1}
         noise = {"suzy_throws": 1, "billy_throws": 1}
         result, info = ac_defn.is_necessary(env, event, outcome, state, noise)
-        print(result, info)
         assert result is True
 
         # Check that the correct info was returned
@@ -236,9 +235,7 @@ class TestNecessityModifiedHPRockThrowing:
         event = {"suzy_throws": 1}
         outcome = {"bottle_shatters": 1}
         noise = {"suzy_throws": 1, "billy_throws": 1}
-        result, info = ac_defn.is_necessary(
-            env, event, outcome, state, noise, witness_set=[]
-        )
+        result, info = ac_defn.is_necessary(env, event, outcome, state, noise)
         assert result is False
 
     def test_4(self):
@@ -337,9 +334,7 @@ class TestMinimalityModifiedHPRockThrowing:
         event = {"suzy_throws": 1, "billy_hits": 0}
         outcome = {"bottle_shatters": 1}
         noise = {"suzy_throws": 1, "billy_throws": 1}
-        result, info = ac_defn.is_minimal(
-            env, event, outcome, state, noise, witness_set=[]
-        )
+        result, info = ac_defn.is_minimal(env, event, outcome, state, noise)
         assert result is True
         # Make sure no smaller cause is reported in the info dict
         assert "ac3_smaller_cause" not in info or not info["ac3_smaller_cause"]
